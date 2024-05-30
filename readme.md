@@ -11,6 +11,8 @@ from command line.
       -p, --fontsize=INT       set font size in pixels
       -w, --width=INT          set width of label in pixels (default: 350)
       -h, --height=INT         set height of label in pixels (default: 106)
+      -r, --rotate=INT         rotation of the image (default: 0)
+      -b, --noborder           do not draw a box around the text
       -o, --outfile=STRING     output file name
       -h, --help               this help screen
 
@@ -29,10 +31,10 @@ The compiler needs to support C23 for constexpr.
 
 ## Labels
 
-Labels are created as rectangles with rounded corners with the text inside, rotated 90° to be ready for printing. Text is centered inside the label. The font size is automatically scaled to fit the height, unless given with -p.
+Labels are created as rectangles (optionally with rounded corners) with the text inside. They can be optionally rotated by 90, 180 or 270 degrees as needed for printing. Text is centered inside the label. The font size is automatically scaled to fit the height, unless explicitly given with -p.
 
-    ./label -o example1.png Example
-    ./label -o example2.png -f Sans Example\ 1 Example\ 2
+    ./label -o example1.png -r 90 Example
+    ./label -o example2.png -r 90 -f Sans Example\ 1 Example\ 2
 
 ![Example 1](example1.png "Example 1")
 ![Example 2](example2.png "Example 2")
