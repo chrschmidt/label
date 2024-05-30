@@ -26,7 +26,7 @@ struct {
 } config = {
     .width       = 350,
     .height      = 106,
-    .rotate      = 90,
+    .rotate      = 0,
     .drawframe   = 1,
     .outerborder = 0,
     .innerborder = 4,
