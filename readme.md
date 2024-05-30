@@ -14,7 +14,7 @@ from command line.
       -o, --outfile=STRING     output file name
       -h, --help               this help screen
 
-The default size is set for 12mm paper of a Brother QL label printer (106 pxiel height).
+The default size is set for 12mm paper of a Brother QL label printer (106 pixel height).
 
 Each further argument is interpreted as a line to print into the label.
 
