@@ -21,33 +21,43 @@ struct {
     int drawframe;
     int outerborder;
     int innerborder;
+    int rightborder;
+    int bottomborder;
+    int leftborder;
+    int topborder;
     int stroke;
     int roundness;
 } config = {
-    .width       = 350,
-    .height      = 106,
-    .rotate      = 0,
-    .drawframe   = 1,
-    .outerborder = 0,
-    .innerborder = 4,
-    .stroke      = 2,
-    .roundness   = 10
+    .width        = 350,
+    .height       = 106,
+    .rotate       = 0,
+    .drawframe    = 1,
+    .outerborder  = 0,
+    .innerborder  = 4,
+    .rightborder  = 0,
+    .bottomborder = 0,
+    .leftborder   = 0,
+    .topborder    = 0,
+    .stroke       = 2,
+    .roundness    = 10,
 };
 
 static cairo_t* background (void) {
-    int width  = config.width;
-    int height = config.height;
-
-    cairo_surface_t* surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+    cairo_surface_t* surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, config.width, config.height);
     cairo_t* cr = cairo_create (surface);
     cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
     cairo_set_antialias (cr, CAIRO_ANTIALIAS_NONE);
     cairo_paint (cr);
     if (config.drawframe) {
-        int border = config.outerborder;
+        config.rightborder  += config.outerborder;
+        config.bottomborder += config.outerborder;
+        config.leftborder   += config.outerborder;
+        config.topborder    += config.outerborder;
+        int drawwidth  = config.width  - config.leftborder - config.rightborder;
+        int drawheight = config.height - config.topborder  - config.bottomborder;
         int stroke = config.stroke;
         char svg[1024];
-        RsvgRectangle viewport = { .x = 0.0, .y = 0.0, .width = width, .height = height };
+        RsvgRectangle viewport = { .x = config.leftborder, .y = config.topborder, .width = drawwidth, .height = drawheight };
         GError* error = NULL;
         snprintf (svg, sizeof(svg), "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
                   "<svg width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\" xmlns:svg=\"http://www.w3.org/2000/svg\">"
@@ -55,10 +65,10 @@ static cairo_t* background (void) {
                   "<rect style=\"opacity:1;fill:white;fill-opacity:0;stroke:black;stroke-width:%d;stroke-opacity:1\""
                   " id=\"border\" width=\"%d\" height=\"%d\" x=\"%d\" y=\"%d\" ry=\"10\" rx=\"10\" />"
                   "</g></svg>",
-                  width, height, width-1, height-1, // svg size and viewport
-                  stroke,                           // stroke width
-                  (int)(width-2*border-1.5*stroke), (int)(height-2*border-1.5*stroke), // width and height, in the centerline of the object
-                  border+stroke/2, border+stroke/2);
+                  drawwidth, drawheight, drawwidth-1, drawheight-1,          // svg size and viewport
+                  stroke,                                                    // stroke width
+                  (int)(drawwidth-1.5*stroke), (int)(drawheight-1.5*stroke), // width and height, in the centerline of the object
+                  stroke/2, stroke/2);
         RsvgHandle* handle = rsvg_handle_new_from_data ((uint8_t*) svg, strlen(svg), &error);
         rsvg_handle_render_document (handle, cr, &viewport, &error);
         g_object_unref (handle);
@@ -79,17 +89,18 @@ static void add_text (cairo_t* cr, const char* face, int size, const char** line
     for (const char** line=lines; *line; line++)
         linecount++;
 
-    int fullborder = config.outerborder+config.stroke+config.innerborder;
-    int maxwidth = config.width - 2*fullborder;
-    int maxheight = config.height - 2*fullborder;
+    int drawwidth = config.width - config.rightborder - config.leftborder - 2*config.innerborder - 2*config.stroke;
+    int drawheight = config.height - config.topborder - config.bottomborder - 2*config.innerborder - 2*config.stroke;
+    int ystart = config.topborder  + config.innerborder + config.stroke;
+    int xstart = config.leftborder + config.innerborder + config.stroke;
 
-    int space = maxheight / linecount;
+    int space = drawheight / linecount;
     int y;
     if (size == 0) {
         size = space * 7 / 8;
-        y = fullborder - 1;
+        y = ystart;
     } else {
-        y = fullborder - 1; // TBD
+        y = ystart; // TBD
     }
     printf ("Using line spacing %d, font size: %d pixel\n", space, size);
     pango_font_description_set_absolute_size (fontdesc, (double)size * PANGO_SCALE);
@@ -98,20 +109,20 @@ static void add_text (cairo_t* cr, const char* face, int size, const char** line
     pango_cairo_update_layout (cr, layout);
 
     for (const char** line=lines; *line; line++) {
-        printf ("Writing> %s\n", *line);
+        printf ("Writing> %s", *line);
         cairo_save (cr);
         pango_layout_set_text (layout, *line, -1);
         pango_cairo_update_layout (cr, layout);
         pango_layout_get_pixel_size (layout, &width, &height);
-        PangoRectangle inkr, logr;
-        pango_layout_get_pixel_extents (layout, &inkr, &logr);
+//        PangoRectangle inkr, logr;
+//        pango_layout_get_pixel_extents (layout, &inkr, &logr);
 
-        if (width > maxwidth) {
+        if (width > drawwidth) {
             fprintf (stderr, "Text \"%s\" too long, aborting\n", *line);
             _exit (1);
         }
         printf ("  size: %dx%d\n", width, height);
-        int x = config.width/2 - (width/2);
+        int x = xstart + drawwidth/2 - (width/2);
         cairo_move_to (cr, x, y);
         pango_cairo_update_layout (cr, layout);
         pango_cairo_show_layout (cr, layout);
@@ -179,7 +190,13 @@ int main (int argc, const char * argv[]) {
         { "width", 'w', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &config.width, 0, "set width of label in pixels", NULL },
         { "height", 'h', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &config.height, 0, "set height of label in pixels", NULL },
         { "rotate", 'r', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &config.rotate, 0, "rotation of the image", NULL },
-        { "noborder", 'b', POPT_ARG_VAL, &config.drawframe, 0, "do not draw a box around the text", NULL },
+        { "noframe", 0, POPT_ARG_VAL, &config.drawframe, 0, "do not draw a box around the text", NULL },
+        { "ob", 0, POPT_ARG_INT, &config.outerborder, 0, "extra border space around the frame", NULL },
+        { "ib", 0, POPT_ARG_INT, &config.innerborder, 0, "extra border space inside the frame", NULL },
+        { "rb", 0, POPT_ARG_INT, &config.rightborder, 0, "extra outer border space to the right", NULL },
+        { "lb", 0, POPT_ARG_INT, &config.leftborder, 0, "extra outer border space to the left", NULL },
+        { "tb", 0, POPT_ARG_INT, &config.topborder, 0, "extra outer border space to the top", NULL },
+        { "bb", 0, POPT_ARG_INT, &config.bottomborder, 0, "extra outer border space to the bottom", NULL },
         { "outfile", 'o', POPT_ARG_STRING, &outfile, 0, "output file name", NULL },
         POPT_AUTOHELP
         POPT_TABLEEND
