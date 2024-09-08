@@ -12,13 +12,21 @@ from command line.
       -w, --width=INT          set width of label in pixels (default: 350)
       -h, --height=INT         set height of label in pixels (default: 106)
       -r, --rotate=INT         rotation of the image (default: 0)
-      -b, --noborder           do not draw a box around the text
+          --noframe            do not draw a box around the text
+          --ob=INT             extra border space around the frame
+          --ib=INT             extra border space inside the frame
+          --rb=INT             extra outer border space to the right
+          --lb=INT             extra outer border space to the left
+          --tb=INT             extra outer border space to the top
+          --bb=INT             extra outer border space to the bottom
       -o, --outfile=STRING     output file name
       -h, --help               this help screen
 
-The default size is set for 12mm paper of a Brother QL label printer (106 pixel height).
+The default size is set for 12mm paper of a Brother QL label printer (106 pixel height), after 90° rotation.
 
-Each further argument is interpreted as a line to print into the label.
+The outer border is considered between the label edge and the frame, while the inner border defines the (extra) space between the text and the frame. Further one-sided outer border arguments are additive to the global outer border.
+
+Each non-option argument is interpreted as a line to print into the label.
 
 
 ## Building
@@ -26,8 +34,6 @@ Each further argument is interpreted as a line to print into the label.
 Just type make.
 
 Requirements are librsvg-2, pangocairo and popt.
-
-The compiler needs to support C23 for constexpr.
 
 ## Labels
 
