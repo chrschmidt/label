@@ -88,6 +88,8 @@ static void add_text (cairo_t* cr, const char* face, int size, const char** line
     int linecount  = 0;
     for (const char** line=lines; *line; line++)
         linecount++;
+    if (linecount == 0)
+        return;
 
     int drawwidth = config.width - config.rightborder - config.leftborder - 2*config.innerborder - 2*config.stroke;
     int drawheight = config.height - config.topborder - config.bottomborder - 2*config.innerborder - 2*config.stroke;
