@@ -12,6 +12,11 @@
 constexpr double M_PI = 3.141592653589793238462643383279502884;
 #endif
 
+enum {
+    align_center = 0,
+    align_left   = 1
+};
+
 struct {
 // Canvas
     int width;
@@ -27,6 +32,7 @@ struct {
     int topborder;
     int stroke;
     int roundness;
+    int align;
 } config = {
     .width        = 350,
     .height       = 106,
@@ -40,6 +46,7 @@ struct {
     .topborder    = 0,
     .stroke       = 2,
     .roundness    = 10,
+    .align        = align_center,
 };
 
 static cairo_t* background (void) {
@@ -97,7 +104,7 @@ static void add_text (cairo_t* cr, const char* face, int size, const char** line
     int xstart = config.leftborder + config.innerborder + config.stroke;
 
     int space = drawheight / linecount;
-    int y;
+    int x, y;
     if (size == 0) {
         size = space * 7 / 8;
         y = ystart;
@@ -124,7 +131,15 @@ static void add_text (cairo_t* cr, const char* face, int size, const char** line
             _exit (1);
         }
         printf ("  size: %dx%d\n", width, height);
-        int x = xstart + drawwidth/2 - (width/2);
+        switch (config.align) {
+        case align_left:
+            x = 0;
+            break;
+        case align_center:
+        default:
+            x = xstart + drawwidth/2 - (width/2);
+            break;
+        }
         cairo_move_to (cr, x, y);
         pango_cairo_update_layout (cr, layout);
         pango_cairo_show_layout (cr, layout);
@@ -199,13 +214,27 @@ int main (int argc, const char * argv[]) {
         { "lb", 0, POPT_ARG_INT, &config.leftborder, 0, "extra outer border space to the left", NULL },
         { "tb", 0, POPT_ARG_INT, &config.topborder, 0, "extra outer border space to the top", NULL },
         { "bb", 0, POPT_ARG_INT, &config.bottomborder, 0, "extra outer border space to the bottom", NULL },
+        { "align", 0, POPT_ARG_STRING, NULL, 'a', "alignment (center (default), left)", NULL },
         { "outfile", 'o', POPT_ARG_STRING, &outfile, 0, "output file name", NULL },
         POPT_AUTOHELP
         POPT_TABLEEND
     };
 
     optcon = poptGetContext (NULL, argc, argv, commandline_options, 0);
-    while ((c = poptGetNextOpt (optcon)) >= 0);
+    while ((c = poptGetNextOpt (optcon)) >= 0) {
+        const char * arg;
+        switch (c) {
+        case 'a':
+            arg = poptGetOptArg (optcon);
+            if (strcmp (arg, "center") == 0) config.align = align_center;
+            else if (strcmp (arg, "left") == 0) config.align = align_left;
+            else {
+                fprintf (stderr, "invalid alignment: %s\n", arg);
+                return 1;
+            }
+            break;
+        }
+    }
     if (c < -1) {
         poptPrintHelp (optcon, stderr, 0);
         return 1;
