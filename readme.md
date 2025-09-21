@@ -19,6 +19,7 @@ from command line.
           --lb=INT             extra outer border space to the left
           --tb=INT             extra outer border space to the top
           --bb=INT             extra outer border space to the bottom
+          --align=STRING       alignment (center (default), left)
       -o, --outfile=STRING     output file name
       -h, --help               this help screen
 
